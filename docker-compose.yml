@@ -1,0 +1,20 @@
+version: '3.8'
+
+services:
+  solder-classifier:
+    build: .
+    container_name: solder-joint-classifier
+    environment:
+      - DISPLAY=${DISPLAY}
+    volumes:
+      # Mount X11 socket for GUI
+      - /tmp/.X11-unix:/tmp/.X11-unix:rw
+      # Mount input/output directories
+      - ./input:/app/input
+      - ./output:/app/output
+      # Optional: Mount your model files if they're large
+      - ./models:/app/models
+    network_mode: host
+    stdin_open: true
+    tty: true
+    restart: unless-stopped
