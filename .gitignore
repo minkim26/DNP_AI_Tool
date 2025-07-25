@@ -4,4 +4,3 @@ input/
 output/
 docker-compose.yml
 dnpAItool.tar.gz
-dnp_ai_model_pytorch.pth
