@@ -1,6 +1,5 @@
-.dockerignore
 __pycache__/
 input/
 output/
 docker-compose.yml
-dnpAItool.tar.gz
+*tar.gz

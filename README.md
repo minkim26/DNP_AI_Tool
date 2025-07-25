@@ -234,13 +234,11 @@ project/
 - **`SolderJointDataset`**: Custom dataset for image loading
 - **`SortingApp`**: Main GUI application class
 
-## License
+## 📄 License
 
-[Specify your license here]
+This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
 
-## Contributing
-
-[Add contribution guidelines if applicable]
+**TL;DR**: Free to use, modify, and distribute. Just keep the copyright notice.
 
 ## Support
 

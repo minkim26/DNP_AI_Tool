@@ -3,10 +3,12 @@
 FROM python:3.9-slim AS builder
 
 # Set environment variables
-ENV DEBIAN_FRONTEND=noninteractive
+ENV DEBIAN_FRONTEND=noninteractive \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
-# Install build dependencies and system packages needed for compilation
-RUN apt-get update && apt-get install -y \
+# Install build dependencies in a single layer
+RUN apt-get update && apt-get install -y --no-install-recommends \
     build-essential \
     python3-dev \
     libgtk-3-dev \
@@ -18,10 +20,11 @@ RUN apt-get update && apt-get install -y \
     libxrender-dev \
     pkg-config \
     wget \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && apt-get clean
 
-# Install Python packages to a specific directory
-RUN pip install --no-cache-dir --user \
+# Install Python packages to a specific directory with optimizations
+RUN pip install --no-cache-dir --user --no-compile \
     torch==2.0.1 \
     torchvision==0.15.2 \
     opencv-python==4.8.1.78 \
@@ -33,17 +36,23 @@ RUN pip install --no-cache-dir --user \
     tqdm==4.66.1 \
     joblib==1.3.2 \
     pyyaml \
-    sv_ttk
+    sv_ttk \
+    && find /root/.local -name "*.pyc" -delete \
+    && find /root/.local -name "__pycache__" -type d -exec rm -rf {} + || true
 
 # Stage 2: Runtime stage with minimal dependencies
 FROM python:3.9-slim AS runtime
 
 # Set environment variables
-ENV DEBIAN_FRONTEND=noninteractive
-ENV DISPLAY=:0
+ENV DEBIAN_FRONTEND=noninteractive \
+    DISPLAY=:0 \
+    PATH=/root/.local/bin:$PATH \
+    PYTHONPATH=/root/.local/lib/python3.9/site-packages:$PYTHONPATH \
+    PYTHONDONTWRITEBYTECODE=1 \
+    PYTHONUNBUFFERED=1
 
-# Install only runtime dependencies (no build tools)
-RUN apt-get update && apt-get install -y \
+# Install only runtime dependencies in a single optimized layer
+RUN apt-get update && apt-get install -y --no-install-recommends \
     python3-tk \
     x11-apps \
     libgtk-3-0 \
@@ -60,33 +69,23 @@ RUN apt-get update && apt-get install -y \
     libxext6 \
     libgomp1 \
     && rm -rf /var/lib/apt/lists/* \
-    && apt-get clean
+    && apt-get clean \
+    && apt-get autoremove -y
 
 # Copy Python packages from builder stage
 COPY --from=builder /root/.local /root/.local
 
-# Make Python packages available system-wide
-ENV PATH=/root/.local/bin:$PATH
-ENV PYTHONPATH=/root/.local/lib/python3.9/site-packages:$PYTHONPATH
-
-# Set working directory
+# Set working directory and create structure in one layer
 WORKDIR /app
+RUN mkdir -p models input output/crack output/nocrack output/unknown
 
 # Copy application files
-COPY inference_gui.py /app/
-COPY dnp_ai_model_pytorch.pth /app/
-COPY config.yaml /app/
+COPY inference_gui.py config.yaml ./
+COPY dnp_ai_model_pytorch.pth ./models/
 
-# Create necessary directories and move model file
-RUN mkdir -p /app/models /app/input /app/output/crack /app/output/nocrack /app/output/unknown \
-    && mv /app/dnp_ai_model_pytorch.pth /app/models/
-
-# Create startup script
-RUN echo '#!/bin/bash\n\
-export DISPLAY=${DISPLAY:-:0}\n\
-cd /app\n\
-python inference_gui.py\n\
-' > /app/start_gui.sh && chmod +x /app/start_gui.sh
+# Create startup script inline to avoid extra layer
+RUN printf '#!/bin/bash\nexport DISPLAY=${DISPLAY:-:0}\ncd /app\npython inference_gui.py\n' > start_gui.sh && \
+    chmod +x start_gui.sh
 
 # Default command
-CMD ["/app/start_gui.sh"]
+CMD ["./start_gui.sh"]
