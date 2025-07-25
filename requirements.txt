@@ -1,0 +1,31 @@
+# Core ML and Deep Learning
+torch==2.0.1
+torchvision==0.15.2
+
+# Image Processing
+opencv-python==4.8.1.78
+Pillow==10.0.0
+
+# Scientific Computing
+numpy==1.24.3
+scikit-learn==1.3.0
+scipy==1.11.1
+
+# Data Visualization
+matplotlib==3.7.2
+
+# Utilities
+tqdm==4.66.1
+joblib==1.3.2
+
+# Configuration and UI
+PyYAML
+sv_ttk
+
+# Additional dependencies that may be needed
+# (these are typically included with the above packages but listed for completeness)
+# certifi
+# charset-normalizer
+# idna
+# requests
+# urllib3
